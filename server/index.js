@@ -37,7 +37,16 @@ app.use(bodyParser.json());
 app.use(morgan("dev"));
 
 // Multer configuration for image uploads
-const storage = multer.memoryStorage(); // Store the file in memory as a Buffer
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads");
+  },
+  filename: (req, file, cb) => {
+    cb(null, file.originalname);
+  },
+});
+
+// Store the file in memory as a Buffer
 const upload = multer({ storage: storage }); // Field name in FormData
 
 // Route to handle image uploads

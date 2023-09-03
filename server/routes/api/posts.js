@@ -76,6 +76,33 @@ router.post("/picture2", upload.single("image"), async (req, res) => {
     res.status(500).send({ error: "Internal server error" });
   }
 });
+
+//experimental
+router.post("/add-picture", upload.single("image"), (req, res) => {
+  const saveImage = User.photos({
+    photos: {
+      data: fs.readFileSync("uploads/" + req.file.filename),
+      contentType: "image/png",
+    },
+  });
+  saveImage
+    .save()
+    .then((res) => {
+      console.log("image is saved");
+    })
+    .catch((err) => {
+      console.log(err, "error has occur");
+    });
+  res.send("image is saved");
+});
+
+router.get("/picturesAll/:userId", async (req, res) => {
+  const userId = req.params.userId;
+  const allData = await User.findById(userId);
+
+  res.json(allData);
+});
+
 //PATCH
 
 router.patch("/:id", async (req, res) => {
@@ -140,7 +167,7 @@ router.post("/add-entry/:id", upload.single("image"), async (req, res) => {
     }
 
     const newEntryData = {
-      data: Buffer.from(req.file.path), // Save the path to the uploaded image
+      data: fs.readFileSync("uploads/" + req.file.filename), // Save the path to the uploaded image
       contentType: req.file.mimetype,
     };
 
@@ -148,6 +175,9 @@ router.post("/add-entry/:id", upload.single("image"), async (req, res) => {
 
     if (!user) {
       return res.status(404).send({ error: "User not found" });
+    }
+    if (!user.photos) {
+      user.photos = []; // Initialize as an empty array if it's null
     }
 
     user.photos.push(newEntryData);
