@@ -4,7 +4,6 @@ const dotenv = require("dotenv");
 const morgan = require("morgan");
 const mongoose = require("mongoose");
 const config = require("./user/config/db");
-const imgSchema = require("../server/user/model/Image");
 const allowOrigin = process.env.ALLOW_ORIGIN || "*";
 const multer = require("multer");
 
@@ -35,39 +34,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 app.use(morgan("dev"));
-
-// Multer configuration for image uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads");
-  },
-  filename: (req, file, cb) => {
-    cb(null, file.originalname);
-  },
-});
-
-// Store the file in memory as a Buffer
-const upload = multer({ storage: storage }); // Field name in FormData
-
-// Route to handle image uploads
-app.post("/upload", (req, res) => {
-  upload(req, res, (err) => {
-    if (err) {
-      return res.status(400).json({ error: err.message });
-    }
-
-    // Multer has successfully uploaded the file as a Buffer in req.file.buffer
-    const fileData = req.file.buffer;
-    const contentType = req.file.mimetype;
-
-    // Perform any further actions with fileData and contentType
-    // For example, you can save this data to MongoDB
-    // ...
-
-    // Respond with success
-    return res.json({ success: true });
-  });
-});
 
 // Routes
 const posts = require("./routes/api/posts");

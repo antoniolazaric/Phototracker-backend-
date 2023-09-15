@@ -15,12 +15,10 @@ const userSchema = mongoose.Schema({
     required: [true, "Please Include your password"],
   },
 
-  equipment: [
-    {
-      type: [String],
-      required: false,
-    },
-  ],
+  equipment: {
+    type: String,
+    required: [true, "Please Include your equipment"],
+  },
   tokens: [
     {
       token: {
@@ -59,7 +57,7 @@ userSchema.methods.generateAuthToken = async function () {
     "secret",
     {
       algorithm: "HS512",
-      expiresIn: "1 week",
+      expiresIn: "1 hour",
     }
   );
   user.tokens = user.tokens.concat({ token });

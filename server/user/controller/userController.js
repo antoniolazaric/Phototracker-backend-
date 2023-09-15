@@ -17,7 +17,7 @@ exports.registerNewUser = async (req, res) => {
       email: req.body.email,
       password: req.body.password,
       equipment: newequipment,
-      photos: null,
+      photos: [],
     });
     let data = await user.save();
     const token = await user.generateAuthToken();

@@ -1,7 +1,6 @@
 const express = require("express");
 const mongodb = require("mongodb");
 const User = require("../../user/model/User");
-const Post = require("../../user/model/Post");
 const { db } = require("../../user/model/User");
 const multer = require("multer");
 const fs = require("fs");
@@ -18,7 +17,7 @@ const upload = multer({ storage: storage });
 // Load post func
 async function loadUserCollection() {
   const client = await mongodb.MongoClient.connect(
-    "mongodb+srv://admin:admin@cluster0.jcggbwf.mongodb.net/Phototracker?retryWrites=true&w=majority",
+    "mongodb+srv://admin:admin@cluster0.jcggbwf.mongodb.net/",
     {
       useNewUrlParser: true,
     }
@@ -36,75 +35,50 @@ const router = express.Router();
 
 // Load posts
 router.get("/", async (req, res) => {
-  const posts = await loadUserCollection();
-  res.send(await posts.find({}).toArray());
-});
-
-//GET
-router.get("/:id", async (req, res) => {
-  console.log(req.params.id);
-  const users = await loadUserCollection();
-  const id2 = req.params.id;
-  //const id = req.params.id;
-  res.send(await users.find({ _id: id2 }).toArray());
-});
-//ADD
-
-//POST
-router.post("/picture", upload.single("image"), async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
-    if (!user) {
-      return res.status(404).send({ error: "User not found" });
-    }
-    user.photos.push(req.file.path);
-    await user.save();
-    res.send({ success: true });
-  } catch (error) {
-    res.status(400).send({ error: error.message });
-  }
-});
+    const users = await User.find({}); // Fetch all users
 
-router.post("/picture2", upload.single("image"), async (req, res) => {
-  try {
-    const file = req.file;
-    // Use file.buffer and file.mimetype to save image data to MongoDB
-    // ...
-    res.send({ success: true });
+    // Map the users and their photos as in the second function
+    const usersWithPhotos = users.map((user) => {
+      const userData = {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        equipment: user.equipment, // Include other user properties as needed
+        photos: [],
+      };
+
+      if (user.photos && user.photos.length > 0) {
+        userData.photos = user.photos.map((photo) => {
+          if (photo.data instanceof Buffer && photo.contentType) {
+            // Convert the buffer to a base64 string
+            const dataBuffer = photo.data;
+            return {
+              _id: photo._id,
+              url: photo.data,
+              type: photo.contentType,
+            };
+          } else {
+            return {
+              _id: photo._id,
+              url: "", // Provide a default URL or empty string if photo data or contentType is missing
+              type: "",
+            };
+          }
+        });
+      }
+
+      return userData;
+    });
+
+    res.send(usersWithPhotos);
   } catch (err) {
     console.error(err);
     res.status(500).send({ error: "Internal server error" });
   }
 });
 
-//experimental
-router.post("/add-picture", upload.single("image"), (req, res) => {
-  const saveImage = User.photos({
-    photos: {
-      data: fs.readFileSync("uploads/" + req.file.filename),
-      contentType: "image/png",
-    },
-  });
-  saveImage
-    .save()
-    .then((res) => {
-      console.log("image is saved");
-    })
-    .catch((err) => {
-      console.log(err, "error has occur");
-    });
-  res.send("image is saved");
-});
-
-router.get("/picturesAll/:userId", async (req, res) => {
-  const userId = req.params.userId;
-  const allData = await User.findById(userId);
-
-  res.json(allData);
-});
-
 //PATCH
-
 router.patch("/:id", async (req, res) => {
   try {
     const userId = req.params.id;
@@ -140,7 +114,7 @@ router.get("/:userId/photos", async (req, res) => {
 
     const imageUrls = user.photos.map((photo) => ({
       _id: photo._id,
-      url: `http://localhost:5000/${photo.data}`,
+      url: photo.data,
     }));
 
     res.set("Cache-Control", "no-store");
@@ -187,6 +161,38 @@ router.post("/add-entry/:id", upload.single("image"), async (req, res) => {
   } catch (error) {
     console.error("Error adding new entry:", error);
     res.status(400).send({ error: error.message });
+  }
+});
+
+//DELETE
+router.delete("/:userId/photos/:imageId", async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const imageId = req.params.imageId;
+
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).send({ error: "User not found" });
+    }
+
+    // Find the image in the user's photos array by ID
+    const imageIndex = user.photos.findIndex((photo) => photo._id == imageId);
+
+    if (imageIndex === -1) {
+      return res.status(404).send({ error: "Image not found" });
+    }
+
+    // Remove the image from the user's photos array
+    user.photos.splice(imageIndex, 1);
+
+    // Save the updated user data
+    await user.save();
+
+    res.send({ success: true });
+  } catch (error) {
+    console.error("Error deleting image:", error);
+    res.status(500).send({ error: "Internal server error" });
   }
 });
 
