@@ -1,5 +1,4 @@
 module.exports = {
-  database:
-    "mongodb+srv://admin:admin@cluster0.jcggbwf.mongodb.net/Phototracker?retryWrites=true&w=majority",
+  database: process.env.CONNECTION_STRING,
   secret: "password",
 };

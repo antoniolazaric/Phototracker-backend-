@@ -17,7 +17,7 @@ const upload = multer({ storage: storage });
 // Load post func
 async function loadUserCollection() {
   const client = await mongodb.MongoClient.connect(
-    "mongodb+srv://admin:admin@cluster0.jcggbwf.mongodb.net/",
+    process.env.CONNECTION_STRING,
     {
       useNewUrlParser: true,
     }
