@@ -4,8 +4,7 @@
   "description": "expressmongo",
   "main": "index.js",
   "scripts": {
-    "build": "babel src -d build",
-    "start": "node build/index.js",
+    "start": "node server/index.js",
     "dev": "nodemon server/index.js"
   },
   "author": "",
